@@ -154,7 +154,8 @@ md-cli port=8899
 # 访问
 open http://127.0.0.1:8899/md/
 ```
-https://chucun-lianchengyun.oss-cn-beijing.aliyuncs.com/file/upload/2025/02/11/1889229879900114944.jpg
+
+![微信交流群](https://chucun-lianchengyun.oss-cn-beijing.aliyuncs.com/file/upload/2025/02/11/1889229879900114944.jpg)
 
 
 注：如果你使用了本 Markdown 编辑器进行内容排版，并且希望在本项目 README 中展示你的公众号，请到 [#5](https://github.com/doocs/md/discussions/5) 留言。
