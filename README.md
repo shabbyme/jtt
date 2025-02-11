@@ -154,7 +154,7 @@ md-cli port=8899
 # 访问
 open http://127.0.0.1:8899/md/
 ```
-![Uploading 7b079d60fceef2bdcaaca67e7ac1426.jpg…]()
+https://chucun-lianchengyun.oss-cn-beijing.aliyuncs.com/file/upload/2025/02/11/1889229879900114944.jpg
 
 
 注：如果你使用了本 Markdown 编辑器进行内容排版，并且希望在本项目 README 中展示你的公众号，请到 [#5](https://github.com/doocs/md/discussions/5) 留言。
