@@ -20,7 +20,7 @@ export async function streamAIContent({
   aiStore.setGenerating(true)
 
   try {
-    const response = await fetch(`https://api.puzhehei.top/v1/chat/completions`, {
+    const response = await fetch(`${aiStore.apiDomain}/v1/chat/completions`, {
       method: `POST`,
       headers: {
         'Content-Type': `application/json`,
@@ -212,13 +212,20 @@ export function generateCssRewritePrompt(options: {
 
 // AI 服务接口
 export async function callAI(prompt: string): Promise<string> {
+  const aiStore = useAIStore()
   try {
-    const response = await fetch(`/api/ai`, {
+    const response = await fetch(`${aiStore.apiDomain}/v1/chat/completions`, {
       method: `POST`,
       headers: {
         'Content-Type': `application/json`,
+        'Authorization': `Bearer ${aiStore.apiKey}`,
       },
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify({
+        model: aiStore.customModel || aiStore.selectedModel,
+        messages: [{ role: `user`, content: prompt }],
+        temperature: aiStore.temperature,
+        max_tokens: aiStore.maxLength,
+      }),
     })
 
     if (!response.ok) {
@@ -226,7 +233,7 @@ export async function callAI(prompt: string): Promise<string> {
     }
 
     const data = await response.json()
-    return data.content
+    return data.choices[0]?.message?.content || ``
   }
   catch (error) {
     console.error(`调用 AI 服务失败:`, error)

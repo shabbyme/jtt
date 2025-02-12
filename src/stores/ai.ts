@@ -6,6 +6,7 @@ export const useAIStore = defineStore(`ai`, () => {
   const apiKey = useStorage(`md-ai-api-key`, ``)
   const selectedModel = useStorage(`md-ai-selected-model`, `gpt-3.5-turbo`)
   const customModel = useStorage(`md-ai-custom-model`, ``)
+  const apiDomain = useStorage(`md-ai-api-domain`, `https://api.puzhehei.top`)
   const presetWords = useStorage<string[]>(`md-ai-preset-words`, [])
   const temperature = useStorage<number>(`md-ai-temperature`, 0.7)
   const maxLength = useStorage<number>(`md-ai-max-length`, 2048)
@@ -25,6 +26,11 @@ export const useAIStore = defineStore(`ai`, () => {
   // 设置自定义模型
   function setCustomModel(model: string) {
     customModel.value = model
+  }
+
+  // 设置 API 域名
+  function setApiDomain(domain: string) {
+    apiDomain.value = domain
   }
 
   // 添加预设词
@@ -56,6 +62,7 @@ export const useAIStore = defineStore(`ai`, () => {
     apiKey,
     selectedModel,
     customModel,
+    apiDomain,
     presetWords,
     temperature,
     maxLength,
@@ -64,6 +71,7 @@ export const useAIStore = defineStore(`ai`, () => {
     setApiKey,
     selectModel,
     setCustomModel,
+    setApiDomain,
     addPresetWord,
     removePresetWord,
     setTemperature,

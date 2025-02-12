@@ -1,6 +1,13 @@
 <script setup lang="ts">
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu'
 import { useDisplayStore, useStore } from '@/stores'
-import { Edit3, Plus, X } from 'lucide-vue-next'
+import { Edit3, Plus, Wand2, X } from 'lucide-vue-next'
+import CssRewriteDialog from './CssRewriteDialog.vue'
 
 const store = useStore()
 const displayStore = useDisplayStore()
@@ -8,6 +15,8 @@ const displayStore = useDisplayStore()
 const isOpenEditDialog = ref(false)
 const editInputVal = ref(``)
 const tabHistory = ref([``, store.cssContentConfig.active])
+
+const showRewriteDialog = ref(false)
 
 function rename(name: string) {
   editInputVal.value = name
@@ -131,11 +140,23 @@ function tabChanged(tabName: string | number) {
           </TabsTrigger>
         </TabsList>
       </Tabs>
-      <textarea
-        id="cssEditor"
-        type="textarea"
-        placeholder="Your custom css here."
-      />
+
+      <!-- 使用ContextMenu包装textarea -->
+      <ContextMenu>
+        <ContextMenuTrigger class="flex-1">
+          <textarea
+            id="cssEditor"
+            type="textarea"
+            placeholder="Your custom css here."
+          />
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem @click="showRewriteDialog = true">
+            <Wand2 class="mr-2 h-4 w-4" />
+            AI优化CSS
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
 
       <!-- 新增弹窗 -->
       <Dialog v-model:open="isOpenAddDialog">
@@ -195,6 +216,9 @@ function tabChanged(tabName: string | number) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <!-- CSS改写对话框 -->
+      <CssRewriteDialog v-model:show="showRewriteDialog" />
     </div>
   </transition>
 </template>

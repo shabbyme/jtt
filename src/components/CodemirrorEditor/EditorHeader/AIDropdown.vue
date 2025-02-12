@@ -17,6 +17,7 @@ const {
   apiKey,
   selectedModel,
   customModel,
+  apiDomain,
   presetWords,
   temperature,
   maxLength,
@@ -48,7 +49,7 @@ function toggleCustomModel() {
         <BrainCircuit class="mr-2 size-4" />
         OpenAI 设置
       </MenubarItem>
-      <MenubarItem as="a" href="https://api.puzhehei.top/" target="_blank">
+      <MenubarItem as="a" :href="apiDomain" target="_blank">
         <BrainCircuit class="mr-2 size-4" />
         天马座API
       </MenubarItem>
@@ -71,6 +72,21 @@ function toggleCustomModel() {
             type="password"
             placeholder="sk-..."
           />
+        </div>
+
+        <!-- API 域名 -->
+        <div class="grid gap-2">
+          <Label for="apiDomain">API 地址</Label>
+          <div class="flex items-center gap-2">
+            <Input
+              id="apiDomain"
+              v-model="apiDomain"
+              placeholder="https://api.puzhehei.top"
+            />
+          </div>
+          <p class="text-muted-foreground text-xs">
+            输入 https或http加域名，系统会自动补全完整路径，如：https://api.puzhehei.top
+          </p>
         </div>
 
         <!-- 模型选择 -->
