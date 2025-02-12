@@ -17,10 +17,7 @@
 Markdown 文档自动即时渲染为微信图文，让你不再为微信内容排版而发愁！只要你会基本的 Markdown 语法，就能做出一篇样式简洁而又美观大方的微信图文。
 
 ## 在线编辑器地址
-
-- [https://doocs.github.io/md](https://doocs.github.io/md)
-- [https://doocs-md.pages.dev](https://doocs-md.pages.dev)
-
+[(https://github.com/doocs/md)](https://pay.jiangtangtang.cn/)
 注：推荐使用 Chrome 浏览器，效果最佳。
 
 ## 为何二次开发
