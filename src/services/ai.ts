@@ -1,7 +1,10 @@
 import { useAIStore } from '@/stores'
 
 export interface AIStreamOptions {
-  prompt: string
+  prompt: string | Array<{ role: string, content: string }> | {
+    system?: string
+    user?: string
+  }
   onToken?: (token: string) => void
   onError?: (error: Error) => void
   onFinish?: () => void
@@ -25,7 +28,18 @@ export async function streamAIContent({
       },
       body: JSON.stringify({
         model: aiStore.customModel || aiStore.selectedModel,
-        messages: [{ role: `user`, content: prompt }],
+        messages: [
+          ...aiStore.presetWords.map(word => ({ role: `system` as const, content: word })),
+          ...(typeof prompt === `string`
+            ? [{ role: `user` as const, content: prompt }]
+            : Array.isArray(prompt)
+              ? prompt
+              : [
+                  { role: `system` as const, content: (prompt as { system?: string }).system || `` },
+                  { role: `user` as const, content: (prompt as { user?: string }).user || `` },
+                ]
+          ).filter(msg => msg.content),
+        ],
         temperature: aiStore.temperature,
         max_tokens: aiStore.maxLength,
         stream: true,
@@ -118,6 +132,82 @@ export function generateWithAI(prompt: string): Promise<string> {
       },
     })
   })
+}
+
+// CSS改写相关的提示词模板
+export const CSS_REWRITE_PROMPTS = {
+  optimize: `优化CSS结构,使用更合理的选择器和层级`,
+  readability: `提高代码可读性,添加适当的空行和缩进`,
+  simplify: `精简代码,去除冗余的样式声明`,
+  comment: `为重要的样式块添加注释说明`,
+  selectors: `保持原有的选择器名称不变`,
+  important: `保留所有!important声明`,
+  media: `保留所有媒体查询`,
+  animation: `保留所有动画相关代码`,
+}
+
+// 生成CSS改写提示词
+export function generateCssRewritePrompt(options: {
+  styles: string[]
+  retains: string[]
+  css: string
+  customPrompt?: string
+}) {
+  const { styles, retains, css, customPrompt } = options
+
+  // 基础提示词
+  const basePrompt = [
+    `你是一个专业的CSS优化专家。你的任务是根据以下要求优化CSS代码:`,
+    ``,
+    `优化要求:`,
+  ]
+
+  // 添加优化选项
+  styles.forEach((style) => {
+    if (CSS_REWRITE_PROMPTS[style as keyof typeof CSS_REWRITE_PROMPTS]) {
+      basePrompt.push(`- ${CSS_REWRITE_PROMPTS[style as keyof typeof CSS_REWRITE_PROMPTS]}`)
+    }
+  })
+
+  // 添加保留选项
+  if (retains.length > 0) {
+    basePrompt.push(``, `保留要求:`)
+    retains.forEach((retain) => {
+      if (CSS_REWRITE_PROMPTS[retain as keyof typeof CSS_REWRITE_PROMPTS]) {
+        basePrompt.push(`- ${CSS_REWRITE_PROMPTS[retain as keyof typeof CSS_REWRITE_PROMPTS]}`)
+      }
+    })
+  }
+
+  // 添加自定义提示词
+  if (customPrompt?.trim()) {
+    basePrompt.push(
+      ``,
+      `自定义要求:`,
+      customPrompt.trim(),
+    )
+  }
+
+  // 添加处理说明
+  basePrompt.push(
+    ``,
+    `请严格按照以下步骤处理:`,
+    `1. 仔细阅读上述优化和保留要求`,
+    `2. 分析CSS代码的结构和特点`,
+    `3. 根据要求优化代码,同时确保保留指定的特性`,
+    `4. 检查优化后的代码是否符合所有要求`,
+    ``,
+    `需要优化的CSS代码:`,
+    ``,
+    css,
+    ``,
+    `请开始优化:`,
+  )
+
+  return {
+    system: basePrompt.join(`\n`),
+    user: css,
+  }
 }
 
 // AI 服务接口
