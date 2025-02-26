@@ -8,7 +8,8 @@ import {
 } from '@/config'
 import { useStore } from '@/stores'
 import { addPrefix, processClipboardContent } from '@/utils'
-import { ChevronDownIcon, Moon, PanelLeftClose, PanelLeftOpen, Settings, Sun, Wand2 } from 'lucide-vue-next'
+import { ChevronDownIcon, Moon, PanelLeftClose, PanelLeftOpen, Settings, Sun, Users, Wand2 } from 'lucide-vue-next'
+import AboutDialog from './AboutDialog.vue'
 import AIDropdown from './AIDropdown.vue'
 import AIStyleDialog from './AIStyleDialog.vue'
 import ExportImageDialog from './ExportImageDialog.vue'
@@ -60,6 +61,7 @@ const { copy: copyContent } = useClipboard({ source })
 
 const showExportImageDialog = ref(false)
 const showAIStyleDialog = ref(false)
+const showAboutDialog = ref(false)
 
 // 复制到微信公众号
 function copy() {
@@ -143,6 +145,12 @@ function copy() {
         <EditDropdown />
         <StyleDropdown />
         <HelpDropdown />
+        <MenubarMenu>
+          <MenubarTrigger @click="showAboutDialog = true">
+            <Users class="mr-1 size-4" />
+            项目群
+          </MenubarTrigger>
+        </MenubarMenu>
       </Menubar>
     </div>
 
@@ -213,6 +221,11 @@ function copy() {
 
     <AIStyleDialog
       v-model:show="showAIStyleDialog"
+    />
+
+    <AboutDialog
+      :visible="showAboutDialog"
+      @close="showAboutDialog = false"
     />
   </header>
 </template>

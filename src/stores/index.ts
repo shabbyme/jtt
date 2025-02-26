@@ -57,10 +57,26 @@ export const useStore = defineStore(`store`, () => {
   const posts = useStorage(addPrefix(`posts`), [{
     title: `默认文章`,
     content: DEFAULT_CONTENT,
+    groupId: `default`,
   }])
+
+  // 分组列表
+  const groups = useStorage(addPrefix(`groups`), [{
+    id: `default`,
+    title: `默认分组`,
+  }])
+
+  // 回收站
+  const recycleBin = useStorage(addPrefix(`recycle_bin`), {
+    groups: [] as { id: string, title: string, deletedAt: number }[],
+    posts: [] as { title: string, content: string, groupId: string, deletedAt: number }[],
+  })
 
   // 当前文章索引
   const currentPostIndex = useStorage(addPrefix(`currentPostIndex`), 0)
+
+  // 当前分组ID
+  const currentGroupId = useStorage(addPrefix(`currentGroupId`), `default`)
 
   // 是否是首次使用
   const isFirstUse = useStorage(`isFirstUse`, true)
@@ -69,10 +85,29 @@ export const useStore = defineStore(`store`, () => {
   const isOpenRightSlider = useStorage(addPrefix(`is_open_right_slider`), false)
   const isOpenPostSlider = useStorage(addPrefix(`is_open_post_slider`), false)
 
+  // 获取指定分组下的文章列表
+  const getPostsByGroupId = (groupId: string) => {
+    return posts.value.filter(post => post.groupId === groupId)
+  }
+
+  // 获取当前分组下的文章列表
+  const currentGroupPosts = computed(() => {
+    return getPostsByGroupId(currentGroupId.value)
+  })
+
   // 更新输出内容
   const updateOutput = () => {
-    const content = posts.value[currentPostIndex.value].content
-    const rendered = marked.parse(content)
+    const groupPosts = getPostsByGroupId(currentGroupId.value)
+    if (groupPosts.length === 0) {
+      output.value = ``
+      return
+    }
+    const post = groupPosts[currentPostIndex.value]
+    if (!post) {
+      output.value = ``
+      return
+    }
+    const rendered = marked.parse(post.content)
     if (typeof rendered === `string`) {
       output.value = rendered
     }
@@ -88,27 +123,100 @@ export const useStore = defineStore(`store`, () => {
     })
   }
 
+  // 监听分组切换，重置当前文章索引
+  watch(currentGroupId, () => {
+    const groupPosts = getPostsByGroupId(currentGroupId.value)
+    currentPostIndex.value = groupPosts.length > 0 ? 0 : -1
+    // 如果是默认分组且没有文章，添加默认文章
+    if (currentGroupId.value === `default` && groupPosts.length === 0) {
+      posts.value.push({
+        title: `默认文章`,
+        content: DEFAULT_CONTENT,
+        groupId: `default`,
+      })
+      currentPostIndex.value = 0
+    }
+  })
+
   // 文章管理
-  const addPost = (title: string) => {
-    currentPostIndex.value = posts.value.push({
+  const addPost = (title: string, groupId: string = currentGroupId.value) => {
+    // 添加文章到指定分组
+    const newPost = {
       title,
       content: `# ${title}`,
-    }) - 1
+      groupId,
+    }
+    posts.value.push(newPost)
+
+    // 如果添加到当前分组，设置为当前文章
+    if (groupId === currentGroupId.value) {
+      const groupPosts = getPostsByGroupId(groupId)
+      currentPostIndex.value = groupPosts.length - 1
+    }
   }
 
   const renamePost = (index: number, title: string) => {
-    posts.value[index].title = title
+    // 只能重命名当前分组下的文章
+    const groupPosts = getPostsByGroupId(currentGroupId.value)
+    const post = groupPosts[index]
+    if (post) {
+      const globalIndex = posts.value.findIndex(p => p === post)
+      posts.value[globalIndex].title = title
+    }
   }
 
   const delPost = (index: number) => {
-    posts.value.splice(index, 1)
-    currentPostIndex.value = Math.min(index, posts.value.length - 1)
+    // 只能删除当前分组下的文章
+    const groupPosts = getPostsByGroupId(currentGroupId.value)
+    const post = groupPosts[index]
+    if (post) {
+      // 将文章移入回收站
+      recycleBin.value.posts.push({
+        ...post,
+        deletedAt: Date.now(),
+      })
+
+      // 删除文章
+      const globalIndex = posts.value.findIndex(p => p === post)
+      posts.value.splice(globalIndex, 1)
+      // 更新当前文章索引
+      const newGroupPosts = getPostsByGroupId(currentGroupId.value)
+      currentPostIndex.value = Math.min(index, newGroupPosts.length - 1)
+    }
   }
+
+  // 监听文章切换
+  watch(currentPostIndex, () => {
+    if (editor.value) {
+      const groupPosts = getPostsByGroupId(currentGroupId.value)
+      if (groupPosts.length === 0) {
+        editor.value.setValue(``)
+        editor.value.clearHistory()
+        editor.value.refresh()
+        return
+      }
+      const post = groupPosts[currentPostIndex.value]
+      if (!post) {
+        editor.value.setValue(``)
+        editor.value.clearHistory()
+        editor.value.refresh()
+        return
+      }
+      editor.value.setValue(post.content)
+      editor.value.clearHistory()
+      editor.value.refresh()
+    }
+  })
 
   // 清空当前编辑器内容
   const clearCurrentContent = () => {
     if (editor.value) {
-      posts.value[currentPostIndex.value].content = ``
+      const groupPosts = getPostsByGroupId(currentGroupId.value)
+      if (groupPosts.length === 0 || !groupPosts[currentPostIndex.value]) {
+        return
+      }
+      const post = groupPosts[currentPostIndex.value]
+      post.content = ``
       editor.value.setValue(``)
       editor.value.clearHistory()
       editor.value.refresh()
@@ -116,24 +224,30 @@ export const useStore = defineStore(`store`, () => {
     }
   }
 
-  // 监听文章切换
-  watch(currentPostIndex, () => {
-    if (editor.value) {
-      const content = posts.value[currentPostIndex.value].content
-      editor.value.setValue(content)
-      editor.value.clearHistory()
-      editor.value.refresh()
-    }
-  })
-
   // 每次应用启动时检查是否是首次使用
   onMounted(() => {
+    // 确保默认分组在第一位
+    const defaultGroupIndex = groups.value.findIndex(g => g.id === `default`)
+    if (defaultGroupIndex === -1) {
+      // 如果没有默认分组，添加到第一位
+      groups.value.unshift({
+        id: `default`,
+        title: `默认分组`,
+      })
+    }
+    else if (defaultGroupIndex > 0) {
+      // 如果默认分组不在第一位，移动到第一位
+      const defaultGroup = groups.value.splice(defaultGroupIndex, 1)[0]
+      groups.value.unshift(defaultGroup)
+    }
+
     // 如果是首次使用
     if (isFirstUse.value) {
       // 重置为默认文章
       posts.value = [{
         title: `默认文章`,
         content: DEFAULT_CONTENT,
+        groupId: `default`,
       }]
       currentPostIndex.value = 0
       isFirstUse.value = false
@@ -148,6 +262,7 @@ export const useStore = defineStore(`store`, () => {
       posts.value.push({
         title: `新文章`,
         content: `# 新文章`,
+        groupId: `default`,
       })
       currentPostIndex.value = 0
     }
@@ -155,11 +270,14 @@ export const useStore = defineStore(`store`, () => {
     // 初始化编辑器内容
     nextTick(() => {
       if (editor.value) {
-        const content = posts.value[currentPostIndex.value].content
-        editor.value.setValue(content)
-        editor.value.clearHistory()
-        editor.value.refresh()
-        updateOutput()
+        const groupPosts = getPostsByGroupId(currentGroupId.value)
+        const post = groupPosts[currentPostIndex.value]
+        if (post) {
+          editor.value.setValue(post.content)
+          editor.value.clearHistory()
+          editor.value.refresh()
+          updateOutput()
+        }
       }
     })
   })
@@ -531,6 +649,113 @@ export const useStore = defineStore(`store`, () => {
     }
   }
 
+  // 分组管理
+  const addGroup = (title: string) => {
+    const id = Date.now().toString()
+    // 将新分组添加到默认分组之后
+    const defaultGroupIndex = groups.value.findIndex(g => g.id === `default`)
+    groups.value.splice(defaultGroupIndex + 1, 0, {
+      id,
+      title,
+    })
+    return id
+  }
+
+  const renameGroup = (id: string, title: string) => {
+    const group = groups.value.find(g => g.id === id)
+    if (group) {
+      group.title = title
+    }
+  }
+
+  const deleteGroup = (id: string) => {
+    // 不允许删除默认分组
+    if (id === `default`)
+      return
+
+    // 将分组移入回收站
+    const group = groups.value.find(g => g.id === id)
+    if (group) {
+      recycleBin.value.groups.push({
+        ...group,
+        deletedAt: Date.now(),
+      })
+    }
+
+    // 将该分组下的文章移入回收站
+    const groupPosts = posts.value.filter(post => post.groupId === id)
+    recycleBin.value.posts.push(...groupPosts.map(post => ({
+      ...post,
+      deletedAt: Date.now(),
+    })))
+
+    // 删除分组及其文章
+    posts.value = posts.value.filter(post => post.groupId !== id)
+    const index = groups.value.findIndex(g => g.id === id)
+    if (index > -1) {
+      groups.value.splice(index, 1)
+    }
+
+    // 如果删除的是当前分组，切换到默认分组
+    if (currentGroupId.value === id) {
+      currentGroupId.value = `default`
+    }
+  }
+
+  // 从回收站恢复分组
+  const restoreGroup = (id: string) => {
+    const groupIndex = recycleBin.value.groups.findIndex(g => g.id === id)
+    if (groupIndex === -1)
+      return
+
+    // 恢复分组
+    const group = recycleBin.value.groups[groupIndex]
+    groups.value.push({
+      id: group.id,
+      title: group.title,
+    })
+
+    // 恢复该分组下的文章
+    const groupPosts = recycleBin.value.posts.filter(p => p.groupId === id)
+    posts.value.push(...groupPosts.map(({ title, content, groupId }) => ({
+      title,
+      content,
+      groupId,
+    })))
+
+    // 从回收站中移除
+    recycleBin.value.groups.splice(groupIndex, 1)
+    recycleBin.value.posts = recycleBin.value.posts.filter(p => p.groupId !== id)
+  }
+
+  // 从回收站恢复文章
+  const restorePost = (index: number) => {
+    const post = recycleBin.value.posts[index]
+    if (!post)
+      return
+
+    // 如果文章所属分组不存在，先恢复到默认分组
+    if (!groups.value.find(g => g.id === post.groupId)) {
+      post.groupId = `default`
+    }
+
+    // 恢复文章
+    posts.value.push({
+      title: post.title,
+      content: post.content,
+      groupId: post.groupId,
+    })
+
+    // 从回收站中移除
+    recycleBin.value.posts.splice(index, 1)
+  }
+
+  // 清空回收站
+  const clearRecycleBin = () => {
+    recycleBin.value.groups = []
+    recycleBin.value.posts = []
+  }
+
   return {
     isDark,
     toggleDark,
@@ -593,6 +818,16 @@ export const useStore = defineStore(`store`, () => {
     isOpenRightSlider,
     importContent,
     clearCurrentContent,
+    groups,
+    currentGroupId,
+    addGroup,
+    renameGroup,
+    deleteGroup,
+    currentGroupPosts,
+    recycleBin,
+    restoreGroup,
+    restorePost,
+    clearRecycleBin,
   }
 })
 

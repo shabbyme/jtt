@@ -8,18 +8,18 @@ const props = defineProps({
 
 const emit = defineEmits([`close`])
 
+const links = [
+  {
+    label: `项目地址`,
+    url: `https://github.com/357929231/jtt`,
+  },
+]
+
 function onUpdate(val: boolean) {
   if (!val) {
     emit(`close`)
   }
 }
-
-const links = [
-  { label: `原GitHub 仓库`, url: `https://github.com/doocs/md` },
-  { label: `原Gitee 仓库`, url: `https://gitee.com/doocs/md` },
-  { label: `原GitCode 仓库`, url: `https://gitcode.com/doocs/md` },
-]
-
 function onRedirect(url: string) {
   window.open(url, `_blank`)
 }
@@ -27,27 +27,53 @@ function onRedirect(url: string) {
 
 <template>
   <Dialog :open="props.visible" @update:open="onUpdate">
-    <DialogContent>
+    <DialogContent class="sm:max-w-[600px]">
       <DialogHeader>
-        <DialogTitle>基于MD二次开发，新增AI功能</DialogTitle>
+        <DialogTitle class="text-center">
+          基于MD二次开发，新增AI功能
+        </DialogTitle>
       </DialogHeader>
       <div class="text-center">
-        <h3>一款高度简洁的微信 Markdown 编辑器</h3>
-        <p>扫码关注公众号 天马座AI，原创技术内容第一时间推送！</p>
-        <img
-          class="mx-auto my-5"
-          src="https://chucun-lianchengyun.oss-cn-beijing.aliyuncs.com/file/upload/2024/07/12/1811639659546021888.jpg"
-          alt="Doocs Markdown 编辑器"
-          style="width: 40%"
-        >
-        <p class="mt-4">
-          加入 QQ 群讨论：123456789
-        </p>
+        <h3 class="mb-4 text-lg font-medium">
+          一款高度简洁的微信 Markdown 编辑器
+        </h3>
+
+        <div class="grid grid-cols-2 my-6 gap-6">
+          <div class="flex flex-col items-center">
+            <p class="mb-3">
+              扫码进入项目群，获取最新资讯
+            </p>
+            <img
+              class="object-cover h-32 w-32 rounded-lg shadow-md"
+              src="https://chucun-lianchengyun.oss-cn-beijing.aliyuncs.com/file/upload/2025/02/26/1894624886018543616.jpg"
+              alt="公众号二维码"
+            >
+            <p class="text-muted-foreground mt-2 text-sm">
+              扫码进群
+            </p>
+          </div>
+
+          <div class="flex flex-col items-center">
+            <p class="mb-3">
+              添加作者微信进群交流
+            </p>
+            <img
+              class="object-cover h-32 w-32 rounded-lg shadow-md"
+              src="https://chucun-lianchengyun.oss-cn-beijing.aliyuncs.com/file/upload/2025/02/15/1890680560871804928.jpg"
+              alt="作者微信二维码"
+            >
+            <p class="text-muted-foreground mt-2 text-sm">
+              扫码添加
+            </p>
+          </div>
+        </div>
       </div>
-      <DialogFooter class="sm:justify-evenly">
+
+      <DialogFooter class="border-t pt-4 sm:justify-evenly">
         <Button
           v-for="link in links"
           :key="link.url"
+          variant="outline"
           @click="onRedirect(link.url)"
         >
           {{ link.label }}
@@ -56,3 +82,15 @@ function onRedirect(url: string) {
     </DialogContent>
   </Dialog>
 </template>
+
+<style scoped>
+.grid {
+  display: grid;
+}
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+</style>

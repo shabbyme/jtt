@@ -1,5 +1,8 @@
+import { wechatEffects } from './wechatEffects'
+
 // 公众号文章模板
 export const wechatTemplates = [
+  ...wechatEffects,
   {
     name: `深度分析模板`,
     content: `# 深度分析：主题名称
@@ -1481,7 +1484,7 @@ def example():
 \`\`\`
 
 ### 3️⃣ 实际体验
-1. 优点
+- 优点
    - 优点1
    - 优点2
    - 优点3
@@ -2092,5 +2095,225 @@ A1: 解答...
 
 ---
 *关注我们，把握最新潮流动态！*`,
+  },
+  {
+    name: `关注引导模板`,
+    content: `<section style="margin: 20px auto;text-align: center;">
+  <section style="display: inline-block;margin-bottom: 10px;">
+    <section style="display: inline-block;vertical-align: middle;margin-right: 5px;">
+      <span style="color: #ff69b4;font-size: 20px;">💗</span>
+    </section>
+    <section style="display: inline-block;vertical-align: middle;">
+      <span style="color: #3598db;font-size: 16px;font-weight: bold;">点击蓝字</span>
+      <span style="color: #333;font-size: 16px;"> 关注我们</span>
+    </section>
+    <section style="display: inline-block;vertical-align: middle;margin-left: 5px;">
+      <span style="color: #ffd700;font-size: 20px;">✨</span>
+    </section>
+  </section>
+</section>`,
+  },
+  {
+    name: `响应式网格卡片`,
+    content: `<section style="margin: 20px auto;display: flex;flex-wrap: wrap;gap: 15px;justify-content: center;">
+  <section style="flex: 1;min-width: 250px;max-width: 300px;background: #fff;border-radius: 12px;box-shadow: 0 4px 12px rgba(0,0,0,0.1);overflow: hidden;">
+    <section style="width: 100%;height: 150px;background: linear-gradient(45deg, #FF9A9E 0%, #FAD0C4 99%, #FAD0C4 100%);"></section>
+    <section style="padding: 15px;">
+      <section style="font-size: 18px;font-weight: bold;color: #333;margin-bottom: 10px;">卡片标题1</section>
+      <section style="font-size: 14px;color: #666;line-height: 1.6;">这里是卡片的详细描述内容，可以写多行。</section>
+    </section>
+  </section>
+
+  <section style="flex: 1;min-width: 250px;max-width: 300px;background: #fff;border-radius: 12px;box-shadow: 0 4px 12px rgba(0,0,0,0.1);overflow: hidden;">
+    <section style="width: 100%;height: 150px;background: linear-gradient(45deg, #A1C4FD 0%, #C2E9FB 100%);"></section>
+    <section style="padding: 15px;">
+      <section style="font-size: 18px;font-weight: bold;color: #333;margin-bottom: 10px;">卡片标题2</section>
+      <section style="font-size: 14px;color: #666;line-height: 1.6;">这里是卡片的详细描述内容，可以写多行。</section>
+    </section>
+  </section>
+</section>`,
+  },
+  {
+    name: `响应式信息卡片`,
+    content: `<section style="margin: 20px auto;background: #fff;border-radius: 15px;box-shadow: 0 4px 15px rgba(0,0,0,0.1);overflow: hidden;max-width: 600px;">
+  <section style="padding: 20px;background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);color: #fff;">
+    <section style="font-size: 24px;font-weight: bold;margin-bottom: 10px;">信息卡片标题</section>
+    <section style="font-size: 14px;opacity: 0.8;">副标题描述文字</section>
+  </section>
+  <section style="padding: 20px;">
+    <section style="display: flex;flex-wrap: wrap;gap: 15px;">
+      <section style="flex: 1;min-width: 200px;">
+        <section style="font-size: 16px;color: #333;margin-bottom: 8px;">📌 主要信息</section>
+        <section style="font-size: 14px;color: #666;line-height: 1.6;">
+          这里是主要的信息内容描述，可以写多行。
+        </section>
+      </section>
+      <section style="flex: 1;min-width: 200px;">
+        <section style="font-size: 16px;color: #333;margin-bottom: 8px;">💡 补充信息</section>
+        <section style="font-size: 14px;color: #666;line-height: 1.6;">
+          这里是补充的信息内容描述，可以写多行。
+        </section>
+      </section>
+    </section>
+  </section>
+</section>`,
+  },
+  {
+    name: `响应式数据卡片`,
+    content: `<section style="margin: 20px auto;display: flex;flex-wrap: wrap;gap: 15px;justify-content: center;">
+  <section style="flex: 1;min-width: 150px;max-width: 200px;padding: 20px;background: linear-gradient(135deg, #F6D365 0%, #FDA085 100%);border-radius: 12px;text-align: center;">
+    <section style="font-size: 32px;font-weight: bold;color: #fff;margin-bottom: 5px;">99%</section>
+    <section style="font-size: 14px;color: #fff;opacity: 0.9;">满意度</section>
+  </section>
+
+  <section style="flex: 1;min-width: 150px;max-width: 200px;padding: 20px;background: linear-gradient(135deg, #5EE7DF 0%, #B490CA 100%);border-radius: 12px;text-align: center;">
+    <section style="font-size: 32px;font-weight: bold;color: #fff;margin-bottom: 5px;">500+</section>
+    <section style="font-size: 14px;color: #fff;opacity: 0.9;">用户数量</section>
+  </section>
+
+  <section style="flex: 1;min-width: 150px;max-width: 200px;padding: 20px;background: linear-gradient(135deg, #FA709A 0%, #FEE140 100%);border-radius: 12px;text-align: center;">
+    <section style="font-size: 32px;font-weight: bold;color: #fff;margin-bottom: 5px;">5.0</section>
+    <section style="font-size: 14px;color: #fff;opacity: 0.9;">平均评分</section>
+  </section>
+</section>`,
+  },
+  {
+    name: `清新文章排版`,
+    content: `<section style="margin: 20px auto;max-width: 600px;background: linear-gradient(to bottom, #f0f7f4, #ffffff);padding: 20px;border-radius: 12px;">
+  <!-- 标题区域 -->
+  <section style="text-align: center;margin-bottom: 20px;background: linear-gradient(120deg, rgba(138, 201, 182, 0.15), rgba(138, 201, 182, 0.05));padding: 15px;border-radius: 8px;">
+    <section style="display: inline-block;position: relative;padding: 0 30px;">
+      <!-- 左侧装饰 -->
+      <section style="position: absolute;left: 0;top: 50%;transform: translateY(-50%);">
+        <span style="color: #8ac9b6;font-size: 20px;">🌿</span>
+      </section>
+      <!-- 标题文字 -->
+      <section style="font-size: 16px;color: #5a8f83;letter-spacing: 2px;text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">标题一</section>
+      <!-- 右侧装饰 -->
+      <section style="position: absolute;right: 0;top: 50%;transform: translateY(-50%);">
+        <span style="color: #8ac9b6;font-size: 20px;">🌿</span>
+      </section>
+    </section>
+  </section>
+
+  <!-- 正文区域 -->
+  <section style="margin: 0 15px;">
+    <section style="border: 1px solid rgba(138, 201, 182, 0.3);padding: 20px;border-radius: 8px;position: relative;background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(240,247,244,0.95));box-shadow: 0 2px 10px rgba(138, 201, 182, 0.15);">
+      <!-- 左上角装饰 -->
+      <section style="position: absolute;left: -8px;top: -8px;background: #fff;border-radius: 50%;padding: 2px;box-shadow: 0 2px 5px rgba(138, 201, 182, 0.2);">
+        <span style="color: #8ac9b6;font-size: 20px;">🌱</span>
+      </section>
+      <!-- 文章内容 -->
+      <section style="position: relative;font-size: 14px;color: #4a6b62;line-height: 2;letter-spacing: 1px;text-align: justify;">
+        <!-- 内容背景 -->
+        <section style="position: absolute;top: 0;left: 0;right: 0;bottom: 0;background: linear-gradient(45deg, rgba(138, 201, 182, 0.08), rgba(255, 255, 255, 0.08));border-radius: 6px;"></section>
+        <!-- 内容区域 -->
+        <section style="position: relative;padding: 15px;background: rgba(255, 255, 255, 0.6);border-radius: 6px;">
+          内容区域
+        </section>
+      </section>
+      <!-- 右下角装饰 -->
+      <section style="position: absolute;right: -8px;bottom: -8px;background: #fff;border-radius: 50%;padding: 2px;box-shadow: 0 2px 5px rgba(138, 201, 182, 0.2);">
+        <span style="color: #8ac9b6;font-size: 20px;">🌱</span>
+      </section>
+    </section>
+  </section>
+
+  <!-- 底部装饰 -->
+  <section style="text-align: center;margin-top: 20px;background: linear-gradient(120deg, rgba(138, 201, 182, 0.15), rgba(138, 201, 182, 0.05));padding: 15px;border-radius: 8px;">
+    <section style="display: inline-block;position: relative;padding: 0 30px;">
+      <!-- 左侧装饰 -->
+      <section style="position: absolute;left: 0;top: 50%;transform: translateY(-50%);">
+        <span style="color: #8ac9b6;font-size: 20px;">🌿</span>
+      </section>
+      <!-- 底部文字 -->
+      <section style="font-size: 14px;color: #5a8f83;letter-spacing: 2px;text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">标题二</section>
+      <!-- 右侧装饰 -->
+      <section style="position: absolute;right: 0;top: 50%;transform: translateY(-50%);">
+        <span style="color: #8ac9b6;font-size: 20px;">🌿</span>
+      </section>
+    </section>
+  </section>
+</section>`,
+  },
+  {
+    name: `紫色渐变文章模板`,
+    content: `<section style="margin: 20px auto;max-width: 600px;background: linear-gradient(135deg, #e9defa 0%, #fbfcdb 100%);padding: 25px;border-radius: 15px;box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+  <!-- 标题区域 -->
+  <section style="text-align: center;margin-bottom: 25px;">
+    <section style="display: inline-block;background: rgba(255,255,255,0.9);padding: 15px 30px;border-radius: 50px;box-shadow: 0 4px 15px rgba(147,112,219,0.2);">
+      <section style="font-size: 20px;color: #8b5cf6;font-weight: bold;letter-spacing: 2px;">✨ 文章标题 ✨</section>
+    </section>
+  </section>
+
+  <!-- 导语区域 -->
+  <section style="margin: 20px 0;padding: 15px;background: rgba(255,255,255,0.8);border-radius: 10px;border-left: 4px solid #8b5cf6;">
+    <section style="font-size: 14px;color: #666;line-height: 1.8;font-style: italic;">
+      这里是文章导语，简要介绍文章主要内容...
+    </section>
+  </section>
+
+  <!-- 正文区域 -->
+  <section style="margin: 20px 0;">
+    <!-- 小标题 -->
+    <section style="margin-bottom: 15px;display: flex;align-items: center;">
+      <section style="width: 30px;height: 30px;background: #8b5cf6;border-radius: 50%;display: flex;align-items: center;justify-content: center;margin-right: 10px;">
+        <span style="color: #fff;font-weight: bold;">1</span>
+      </section>
+      <section style="font-size: 18px;color: #8b5cf6;font-weight: bold;">第一部分</section>
+    </section>
+    <!-- 内容 -->
+    <section style="padding: 20px;background: rgba(255,255,255,0.9);border-radius: 10px;margin-left: 40px;">
+      <section style="font-size: 14px;color: #666;line-height: 2;">
+        这里是第一部分的详细内容...
+      </section>
+    </section>
+  </section>
+</section>`,
+  },
+  {
+    name: `粉色气泡卡片`,
+    content: `<section style="margin: 20px auto;max-width: 600px;padding: 20px;">
+  <section style="position: relative;background: linear-gradient(45deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%);padding: 25px;border-radius: 15px;color: #fff;">
+    <section style="position: absolute;width: 40px;height: 40px;background: rgba(255,255,255,0.2);border-radius: 50%;top: 20px;right: 20px;"></section>
+    <section style="position: absolute;width: 20px;height: 20px;background: rgba(255,255,255,0.2);border-radius: 50%;top: 70px;right: 50px;"></section>
+    <section style="font-size: 24px;font-weight: bold;margin-bottom: 15px;text-shadow: 2px 2px 4px rgba(0,0,0,0.1);">💖 温馨提示</section>
+    <section style="font-size: 14px;line-height: 1.8;text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">这里是卡片内容，可以写一些温馨提示或重要信息...</section>
+    <section style="position: absolute;width: 30px;height: 30px;background: rgba(255,255,255,0.2);border-radius: 50%;bottom: 20px;left: 30px;"></section>
+  </section>
+</section>`,
+  },
+  {
+    name: `蓝色科技卡片`,
+    content: `<section style="margin: 20px auto;max-width: 600px;background: linear-gradient(135deg, #5B86E5, #36D1DC);padding: 25px;border-radius: 15px;box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+  <!-- 标题区域 -->
+  <section style="display: flex;align-items: center;margin-bottom: 20px;">
+    <section style="width: 40px;height: 40px;background: rgba(255,255,255,0.9);border-radius: 10px;display: flex;align-items: center;justify-content: center;margin-right: 15px;box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+      <span style="font-size: 20px;">🚀</span>
+    </section>
+    <section style="flex: 1;">
+      <section style="font-size: 20px;color: #fff;font-weight: bold;margin-bottom: 5px;">技术革新</section>
+      <section style="font-size: 12px;color: rgba(255,255,255,0.8);">TECHNOLOGY INNOVATION</section>
+    </section>
+  </section>
+  
+  <!-- 内容区域 -->
+  <section style="background: rgba(255,255,255,0.1);border-radius: 10px;padding: 20px;backdrop-filter: blur(5px);">
+    <section style="display: flex;flex-wrap: wrap;gap: 15px;">
+      <section style="flex: 1;min-width: 200px;background: rgba(255,255,255,0.9);padding: 15px;border-radius: 8px;">
+        <section style="font-size: 16px;color: #5B86E5;font-weight: bold;margin-bottom: 10px;">核心优势</section>
+        <section style="font-size: 14px;color: #666;line-height: 1.6;">
+          这里是核心优势的详细描述...
+        </section>
+      </section>
+      <section style="flex: 1;min-width: 200px;background: rgba(255,255,255,0.9);padding: 15px;border-radius: 8px;">
+        <section style="font-size: 16px;color: #36D1DC;font-weight: bold;margin-bottom: 10px;">创新特点</section>
+        <section style="font-size: 14px;color: #666;line-height: 1.6;">
+          这里是创新特点的详细描述...
+        </section>
+      </section>
+    </section>
+  </section>
+</section>`,
   },
 ]

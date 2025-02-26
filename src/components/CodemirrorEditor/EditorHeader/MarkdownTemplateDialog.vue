@@ -7,7 +7,7 @@ import { toast } from '@/composables/useToast'
 import { useStore } from '@/stores'
 import { type Template, templates } from '@/templates'
 import { useVirtualList } from '@vueuse/core'
-import { BarChart, Code, Copy, FileText, Layout, Loader2, MessageSquare, Plus, Search, Text } from 'lucide-vue-next'
+import { BarChart, Code, Copy, FileText, Heading, Image, Layout, LayoutTemplate, Loader2, MessageSquare, Monitor, Plus, Search, Smartphone, Sparkles, Text, Type } from 'lucide-vue-next'
 import { marked } from 'marked'
 import { computed, ref, watch } from 'vue'
 
@@ -256,11 +256,41 @@ watch(searchQuery, () => {
 })
 
 // 计算预览 HTML
+function enhancePreview(template: Template) {
+  if (!template.content.includes(`<style>`)) {
+    return template.content
+  }
+
+  // 为模板添加作用域前缀，避免样式冲突
+  const scopeId = `template-${Date.now()}`
+  const content = template.content.replace(/<style>/g, `<style scoped>`)
+
+  // 为所有顶层元素添加作用域类名
+  const wrapper = document.createElement(`div`)
+  wrapper.innerHTML = content
+  wrapper.querySelectorAll(`:scope > *:not(style)`).forEach((el) => {
+    el.classList.add(scopeId)
+  })
+
+  // 更新样式选择器
+  const styleTag = wrapper.querySelector(`style`)
+  if (styleTag) {
+    let cssText = styleTag.textContent || ``
+    cssText = cssText.replace(/([^{}]+)\{/g, (match) => {
+      return `.${scopeId} ${match}`
+    })
+    styleTag.textContent = cssText
+  }
+
+  return wrapper.innerHTML
+}
+
 const previewHtml = computed(() => {
   if (!selectedTemplate.value)
     return ``
   try {
-    return marked.parse(selectedTemplate.value.content)
+    const content = enhancePreview(selectedTemplate.value)
+    return marked.parse(content)
   }
   catch (error) {
     console.error(`Markdown解析错误:`, error)
@@ -298,12 +328,17 @@ function insertTemplate() {
 // 获取分类图标
 function getCategoryIcon(key: string): any {
   const icons: Record<string, any> = {
-    recommended: Search, // 为推荐分类添加图标
+    recommended: Search,
     basic: Text,
+    components: Layout,
+    layouts: LayoutTemplate,
+    animations: Sparkles,
     advanced: Code,
     wechat: MessageSquare,
-    layout: Layout,
     charts: BarChart,
+    contentStyles: Type,
+    titleStyles: Heading,
+    imageContent: Image,
   }
   return icons[key] || FileText
 }
@@ -350,6 +385,20 @@ async function loadFullPreview(template: Template) {
     isLoading.value = false
   }
 }
+
+// 添加实时响应式预览功能
+const previewWidth = ref(`100%`)
+const isResponsivePreview = ref(false)
+
+function toggleResponsivePreview() {
+  isResponsivePreview.value = !isResponsivePreview.value
+  if (isResponsivePreview.value) {
+    previewWidth.value = `375px` // 移动设备宽度
+  }
+  else {
+    previewWidth.value = `100%`
+  }
+}
 </script>
 
 <template>
@@ -373,18 +422,18 @@ async function loadFullPreview(template: Template) {
         <!-- 分类和列表容器 -->
         <div class="flex flex-col gap-3 md:flex-row md:gap-4">
           <!-- 左侧分类列表 -->
-          <Tabs v-model="activeTab" class="w-full border-b pb-0.5 md:w-[180px] md:border-b-0 md:border-r md:pb-0">
-            <TabsList class="custom-scrollbar h-[60px] w-full flex flex-row flex-wrap gap-0.5 overflow-y-auto bg-transparent md:h-[calc(50vh-6rem)] md:flex-col md:flex-nowrap md:gap-2">
+          <Tabs v-model="activeTab" class="w-full md:w-[180px] md:border-r">
+            <TabsList class="h-auto w-full flex-wrap justify-start bg-transparent md:h-[calc(70vh-8rem)] md:flex-col md:overflow-y-auto">
               <TabsTrigger
                 v-for="(category, key) in filteredTemplates"
                 :key="key"
                 :value="key"
-                class="data-[state=active]:bg-primary/10 w-auto flex-shrink-0 justify-start rounded px-1.5 py-0.5 text-left text-[10px] transition-all md:w-full md:px-3 md:py-2 md:text-sm"
+                class="data-[state=active]:bg-primary/10 flex-shrink-0 justify-start rounded px-2 py-1.5 text-left text-sm transition-all md:mb-1 md:w-full"
               >
-                <div class="flex items-center gap-1 md:gap-2">
+                <div class="flex items-center gap-2">
                   <component
                     :is="getIconForKey(key)"
-                    class="h-3 w-3 md:h-4 md:w-4"
+                    class="h-4 w-4"
                   />
                   <span class="truncate">{{ category.title }}</span>
                 </div>
@@ -394,20 +443,20 @@ async function loadFullPreview(template: Template) {
 
           <!-- 中间模板列表 -->
           <div class="w-full border-b md:w-[250px] md:border-b-0 md:border-r">
-            <h3 class="text-muted-foreground mb-1 text-xs font-medium md:mb-1.5">
+            <h3 class="text-muted-foreground mb-2 text-sm font-medium">
               {{ filteredTemplates[activeTab]?.title || '模板列表' }}
             </h3>
             <div
               v-bind="containerProps"
-              class="space-y-1 md:space-y-1.5 custom-scrollbar h-[120px] overflow-y-auto pr-1 md:h-[35vh]"
+              class="custom-scrollbar h-[35vh] overflow-y-auto pr-2"
             >
               <div v-bind="wrapperProps">
                 <!-- 推荐模板（仅在当前分类是推荐分类时显示） -->
-                <div v-if="activeTab === 'recommended'" class="space-y-1 md:space-y-1.5">
+                <div v-if="activeTab === 'recommended'" class="space-y-2">
                   <div
                     v-for="template in recommendedTemplates"
                     :key="template.name"
-                    class="hover:bg-accent/50 cursor-pointer border rounded p-1.5 transition-all md:p-2"
+                    class="hover:bg-accent/50 cursor-pointer border rounded p-2 transition-all"
                     :class="{
                       'bg-primary/10 border-primary/30': selectedTemplate?.name === template.name,
                       'hover:border-primary/30': selectedTemplate?.name !== template.name,
@@ -415,21 +464,21 @@ async function loadFullPreview(template: Template) {
                     @mouseenter="handleTemplateHover(template)"
                     @click="loadFullPreview(template)"
                   >
-                    <h4 class="mb-0.5 text-xs font-medium">
+                    <h4 class="mb-1 text-sm font-medium">
                       {{ template.name }}
                     </h4>
-                    <p class="text-muted-foreground line-clamp-2 text-[10px] md:text-xs">
+                    <p class="text-muted-foreground line-clamp-2 text-xs">
                       {{ getTemplateDescription(template) }}
                     </p>
                   </div>
                 </div>
 
                 <!-- 分类模板列表 -->
-                <div v-else class="space-y-1 md:space-y-1.5">
+                <div v-else class="space-y-2">
                   <div
                     v-for="{ index, data: template } in virtualList"
                     :key="index"
-                    class="hover:bg-accent/50 cursor-pointer border rounded p-1.5 transition-all md:p-2"
+                    class="hover:bg-accent/50 cursor-pointer border rounded p-2 transition-all"
                     :class="{
                       'bg-primary/10 border-primary/30': selectedTemplate?.name === template.name,
                       'hover:border-primary/30': selectedTemplate?.name !== template.name,
@@ -437,10 +486,10 @@ async function loadFullPreview(template: Template) {
                     @mouseenter="handleTemplateHover(template)"
                     @click="loadFullPreview(template)"
                   >
-                    <h4 class="mb-0.5 text-xs font-medium">
+                    <h4 class="mb-1 text-sm font-medium">
                       {{ template.name }}
                     </h4>
-                    <p class="text-muted-foreground line-clamp-2 text-[10px] md:text-xs">
+                    <p class="text-muted-foreground line-clamp-2 text-xs">
                       {{ getTemplateDescription(template) }}
                     </p>
                   </div>
@@ -455,19 +504,40 @@ async function loadFullPreview(template: Template) {
               <h3 class="text-muted-foreground text-sm font-medium">
                 预览
               </h3>
-              <Button
-                v-if="selectedTemplate"
-                variant="outline"
-                size="sm"
-                class="h-8 md:h-10"
-                @click="copyTemplate"
-              >
-                <Copy class="mr-1.5 h-3.5 w-3.5 md:mr-2 md:h-4 md:w-4" />
-                复制模板
-              </Button>
+              <div class="flex items-center gap-2">
+                <Button
+                  v-if="selectedTemplate?.content.includes('<style>')"
+                  variant="outline"
+                  size="sm"
+                  class="h-8 md:h-10"
+                  @click="toggleResponsivePreview"
+                >
+                  <Smartphone v-if="isResponsivePreview" class="mr-1.5 h-3.5 w-3.5 md:mr-2 md:h-4 md:w-4" />
+                  <Monitor v-else class="mr-1.5 h-3.5 w-3.5 md:mr-2 md:h-4 md:w-4" />
+                  {{ isResponsivePreview ? '移动视图' : '桌面视图' }}
+                </Button>
+                <Button
+                  v-if="selectedTemplate"
+                  variant="outline"
+                  size="sm"
+                  class="h-8 md:h-10"
+                  @click="copyTemplate"
+                >
+                  <Copy class="mr-1.5 h-3.5 w-3.5 md:mr-2 md:h-4 md:w-4" />
+                  复制模板
+                </Button>
+              </div>
             </div>
-            <div class="h-[160px] overflow-y-auto border rounded-lg p-3 md:h-[35vh] md:p-4">
-              <div v-if="selectedTemplate && !isLoading" class="prose dark:prose-invert prose-sm md:prose-base max-w-none" v-html="previewHtml" />
+            <div
+              class="preview-container h-[160px] overflow-y-auto border rounded-lg p-3 md:h-[35vh] md:p-4"
+              :class="{ 'flex justify-center': isResponsivePreview }"
+            >
+              <div
+                v-if="selectedTemplate && !isLoading"
+                class="preview-content prose dark:prose-invert prose-sm md:prose-base max-w-none overflow-x-auto"
+                :style="{ width: previewWidth, transition: 'width 0.3s ease' }"
+                v-html="previewHtml"
+              />
               <div v-else-if="isLoading" class="text-muted-foreground h-full flex items-center justify-center">
                 <div class="text-center">
                   <Loader2 class="animate-spin mx-auto mb-3 h-8 w-8 opacity-50 md:mb-4 md:h-12 md:w-12" />
@@ -526,7 +596,7 @@ async function loadFullPreview(template: Template) {
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
+  width: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -535,16 +605,36 @@ async function loadFullPreview(template: Template) {
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: var(--scrollbar);
-  border-radius: 2px;
+  border-radius: 3px;
 }
 
 .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   background-color: var(--scrollbar-hover, var(--scrollbar));
 }
 
-.custom-scrollbar {
-  scrollbar-gutter: stable;
-  padding-right: 2px;
+/* 确保TabsList在移动端正确显示 */
+@media (max-width: 768px) {
+  :deep(.tabs-list) {
+    flex-wrap: wrap;
+    height: auto !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
+  }
+}
+
+/* 确保分类列表在桌面端正确显示 */
+@media (min-width: 769px) {
+  :deep(.tabs-list) {
+    display: flex;
+    flex-direction: column;
+    height: calc(70vh - 8rem);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 8px;
+  }
 }
 
 .prose {
@@ -567,5 +657,47 @@ async function loadFullPreview(template: Template) {
   border: 1px solid var(--border);
   padding: 0.5rem;
   text-align: left;
+}
+
+.preview-container {
+  background: var(--background);
+  transition: all 0.3s ease;
+}
+
+.preview-content {
+  max-width: none;
+  white-space: nowrap;
+  overflow-x: auto;
+}
+
+.preview-content::-webkit-scrollbar {
+  height: 6px;
+}
+
+.preview-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.preview-content::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar);
+  border-radius: 3px;
+}
+
+.preview-content:hover::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-hover, var(--scrollbar));
+}
+
+.preview-content > * {
+  white-space: normal;
+}
+
+.preview-content pre,
+.preview-content table {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.dark .preview-content {
+  color-scheme: dark;
 }
 </style>

@@ -1,22 +1,19 @@
 <script setup lang="ts">
 import { useAIStore } from '@/stores'
-import { BrainCircuit, X } from 'lucide-vue-next'
+import { BrainCircuit } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
-import { ref } from 'vue'
 import { Button } from '../../../components/ui/button'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/dialog'
 import { Input } from '../../../components/ui/input'
 import { Label } from '../../../components/ui/label'
 import { MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from '../../../components/ui/menubar'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
+import AIModelSelector from './AIModelSelector.vue'
 
 const aiStore = useAIStore()
-const useCustomModel = ref(false)
 
 const {
   apiKey,
   selectedModel,
-  customModel,
   apiDomain,
   presetWords,
   temperature,
@@ -24,16 +21,6 @@ const {
   isGenerating,
   settingsDialogVisible,
 } = storeToRefs(aiStore)
-
-function toggleCustomModel() {
-  useCustomModel.value = !useCustomModel.value
-  if (!useCustomModel.value) {
-    selectedModel.value = `gpt-3.5-turbo`
-  }
-  else {
-    selectedModel.value = customModel.value || ``
-  }
-}
 </script>
 
 <template>
@@ -61,6 +48,9 @@ function toggleCustomModel() {
     <DialogContent class="mobile-dialog sm:max-w-[600px]">
       <DialogHeader>
         <DialogTitle>OpenAI 设置</DialogTitle>
+        <DialogDescription>
+          配置OpenAI API相关设置，包括API密钥、模型选择等
+        </DialogDescription>
       </DialogHeader>
       <div class="grid gap-4 py-4">
         <!-- API Key -->
@@ -93,100 +83,60 @@ function toggleCustomModel() {
         <div class="grid gap-2">
           <Label>模型</Label>
           <div class="flex flex-wrap items-center gap-2">
-            <Select
-              v-if="!useCustomModel"
-              v-model="selectedModel"
-            >
-              <SelectTrigger class="flex-1">
-                <SelectValue placeholder="选择模型" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="gpt-3.5-turbo">
-                  GPT-3.5 Turbo
-                </SelectItem>
-                <SelectItem value="gpt-4">
-                  GPT-4
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Input
-              v-else
-              v-model="selectedModel"
-              placeholder="输入自定义模型名称"
-              class="flex-1"
-            />
-            <Button
-              variant="outline"
-              class="whitespace-nowrap"
-              :class="{ 'border-primary': useCustomModel }"
-              @click="toggleCustomModel"
-            >
-              自定义模型
-            </Button>
+            <AIModelSelector v-model:model-id="selectedModel" />
           </div>
         </div>
 
         <!-- 系统提示词 -->
         <div class="grid gap-2">
           <Label>系统提示词</Label>
-          <div v-for="(_, index) in presetWords" :key="index" class="flex items-center gap-2">
-            <Input v-model="presetWords[index]" />
+          <div class="flex flex-wrap gap-2">
+            <Input
+              v-for="(_word, index) in presetWords"
+              :key="index"
+              v-model="presetWords[index]"
+              class="flex-1"
+            />
             <Button
               variant="outline"
-              size="icon"
-              @click="presetWords.splice(index, 1)"
+              class="whitespace-nowrap"
+              @click="presetWords.push('')"
             >
-              <X class="size-4" />
+              添加提示词
             </Button>
           </div>
-          <Button
-            variant="outline"
-            @click="presetWords.push('')"
-          >
-            添加提示词
-          </Button>
         </div>
 
-        <!-- 温度设置 -->
+        <!-- 温度 -->
         <div class="grid gap-2">
-          <div class="flex justify-between">
-            <Label>温度</Label>
-            <span class="text-muted-foreground">{{ Number(temperature).toFixed(1) }}</span>
-          </div>
+          <Label for="temperature">温度 ({{ temperature }})</Label>
           <Input
-            v-model.number="temperature"
-            type="number"
-            :min="0"
-            :max="2"
-            :step="0.1"
-            class="w-full"
+            id="temperature"
+            v-model="temperature"
+            type="range"
+            min="0"
+            max="2"
+            step="0.1"
           />
-          <p class="text-muted-foreground text-xs">
-            较低的值使输出更加集中和确定，较高的值使输出更加多样和创造性
-          </p>
         </div>
 
         <!-- 最大长度 -->
         <div class="grid gap-2">
-          <Label>最大长度</Label>
+          <Label for="maxLength">最大长度 ({{ maxLength }})</Label>
           <Input
-            v-model.number="maxLength"
-            type="number"
-            :min="1"
-            :max="4096"
+            id="maxLength"
+            v-model="maxLength"
+            type="range"
+            min="100"
+            max="4000"
+            step="100"
           />
-          <p class="text-muted-foreground text-xs">
-            生成文本的最大标记数（1-4096）
-          </p>
         </div>
       </div>
 
       <DialogFooter>
-        <Button variant="outline" @click="settingsDialogVisible = false">
-          取消
-        </Button>
         <Button @click="settingsDialogVisible = false">
-          确定
+          关闭
         </Button>
       </DialogFooter>
     </DialogContent>

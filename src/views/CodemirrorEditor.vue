@@ -1512,6 +1512,79 @@ function handleTouchEnd(e: TouchEvent) {
     }, 2000)
   }
 }
+
+// 添加编辑状态
+const isPreviewEditing = ref(false)
+
+// 添加预览区域的输入处理函数
+function handlePreviewInput(e: Event) {
+  // 获取当前编辑的元素
+  const target = e.target as HTMLElement
+  if (!target)
+    return
+
+  // 保存当前元素的样式
+  const styles = window.getComputedStyle(target)
+  const originalStyles = {
+    color: styles.color,
+    fontSize: styles.fontSize,
+    fontWeight: styles.fontWeight,
+    background: styles.background,
+    // 添加其他需要保持的样式...
+  }
+
+  // 获取纯文本内容
+  const content = target.textContent || ``
+
+  if (editor.value) {
+    // 将预览区域的纯文本内容转换回Markdown
+    const markdownContent = content
+      .split(`\n`)
+      .map(line => line.trim())
+      .join(`\n\n`)
+
+    // 保存当前滚动位置
+    const scrollInfo = editor.value.getScrollInfo()
+
+    editor.value.setValue(markdownContent)
+    store.posts[store.currentPostIndex].content = markdownContent
+
+    // 恢复滚动位置
+    editor.value.scrollTo(scrollInfo.left, scrollInfo.top)
+
+    // 恢复元素的原始样式
+    Object.assign(target.style, originalStyles)
+  }
+}
+
+// 处理预览区域的粘贴事件，保持样式
+function handlePreviewPaste(e: ClipboardEvent) {
+  e.preventDefault()
+  const text = e.clipboardData?.getData(`text/plain`) || ``
+  const selection = window.getSelection()
+  if (!selection?.rangeCount)
+    return
+
+  const range = selection.getRangeAt(0)
+  const textNode = document.createTextNode(text)
+  range.deleteContents()
+  range.insertNode(textNode)
+
+  // 设置光标位置到插入文本的末尾
+  range.setStartAfter(textNode)
+  range.setEndAfter(textNode)
+  selection.removeAllRanges()
+  selection.addRange(range)
+}
+
+// 处理预览区域的焦点事件
+function handlePreviewFocus() {
+  isPreviewEditing.value = true
+}
+
+function handlePreviewBlur() {
+  isPreviewEditing.value = false
+}
 </script>
 
 <template>
@@ -1618,6 +1691,11 @@ function handleTouchEnd(e: TouchEvent) {
                 id="output"
                 :key="output"
                 class="markdown-preview"
+                :class="{ 'is-editing': isPreviewEditing }"
+                @input="handlePreviewInput"
+                @paste="handlePreviewPaste"
+                @focus="handlePreviewFocus"
+                @blur="handlePreviewBlur"
                 v-html="output"
               />
               <div v-if="isCoping" class="loading-mask">
@@ -1911,18 +1989,25 @@ function handleTouchEnd(e: TouchEvent) {
   height: 100%;
   overflow-y: auto;
   background-color: var(--background);
+  width: 100%;
+  padding: 0;
+  box-sizing: border-box;
 
   .preview {
-    min-height: 100%;
-    height: auto;
     width: 100%;
+    height: 100%;
     margin: 0;
-    padding: 16px;
+    background-color: var(--background);
+    box-shadow: none;
+    border: none;
 
     #output {
       width: 100%;
       min-height: 100%;
       height: auto;
+      padding: 20px;
+      box-sizing: border-box;
+      border: none;
     }
   }
 }
@@ -1934,6 +2019,41 @@ function handleTouchEnd(e: TouchEvent) {
   overflow: visible;
   word-break: break-word;
   overflow-wrap: break-word;
+
+  /* 允许文本选择和编辑，但保持样式 */
+  cursor: text;
+  caret-color: currentColor;
+
+  /* 编辑状态的视觉反馈 */
+  &.is-editing {
+    outline: none;
+  }
+
+  /* 确保编辑时不会影响布局 */
+  &:focus {
+    outline: none;
+  }
+
+  /* 保持所有元素的样式和事件 */
+  section,
+  div,
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  span {
+    position: relative;
+
+    &[contenteditable='true'] {
+      cursor: text;
+      -webkit-user-modify: read-write;
+      user-modify: read-write;
+      -moz-user-modify: read-write;
+    }
+  }
 }
 
 .mobile-controls {
