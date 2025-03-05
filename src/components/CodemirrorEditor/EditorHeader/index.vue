@@ -145,10 +145,6 @@ function copy() {
         <EditDropdown />
         <StyleDropdown />
         <MenubarMenu>
-          <MenubarTrigger @click="showAboutDialog = true">
-            <Users class="mr-1 size-4" />
-            项目群
-          </MenubarTrigger>
         </MenubarMenu>
       </Menubar>
     </div>
