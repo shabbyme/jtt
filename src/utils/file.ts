@@ -445,6 +445,9 @@ try {
   console.error(err);
   reject(err);
 }
+})
+})
+}
 
 function fileUpload(content: string, file: File) {
   const imgHost = localStorage.getItem(`imgHost`)
