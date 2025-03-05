@@ -9,7 +9,6 @@ import {
 import { useStore } from '@/stores'
 import { addPrefix, processClipboardContent } from '@/utils'
 import { ChevronDownIcon, Moon, PanelLeftClose, PanelLeftOpen, Settings, Sun, Users, Wand2 } from 'lucide-vue-next'
-import AboutDialog from './AboutDialog.vue'
 import AIDropdown from './AIDropdown.vue'
 import AIStyleDialog from './AIStyleDialog.vue'
 import ExportImageDialog from './ExportImageDialog.vue'
