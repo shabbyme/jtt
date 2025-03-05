@@ -36,10 +36,6 @@ const {
         <BrainCircuit class="mr-2 size-4" />
         OpenAI 设置
       </MenubarItem>
-      <MenubarItem as="a" :href="apiDomain" target="_blank">
-        <BrainCircuit class="mr-2 size-4" />
-        天马座API
-      </MenubarItem>
     </MenubarContent>
   </MenubarMenu>
 
