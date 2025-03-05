@@ -433,12 +433,17 @@ async function formCustomUpload(content: string, file: File) {
       okCb: resolve, // 重要: 上传成功后给此回调传 url 即可
       errCb: reject, // 上传失败调用的函数
     }
-    // eslint-disable-next-line no-eval
-    eval(str)(exportObj).catch((err: any) => {
-      console.error(err)
-      reject(err)
-    })
-  })
+// 替换后的代码（436-439行）
+try {
+  const dynamicFunc = new Function('exportObj', str); // 将 str 包装为函数
+  dynamicFunc(exportObj)                              // 执行函数并传入 exportObj
+    .catch((err: any) => {
+      console.error(err);
+      reject(err);
+    });
+} catch (err) {
+  console.error(err);
+  reject(err);
 }
 
 function fileUpload(content: string, file: File) {
