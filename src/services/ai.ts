@@ -20,7 +20,7 @@ export async function streamAIContent({
   aiStore.setGenerating(true)
 
   try {
-    const response = await fetch(`${aiStore.apiDomain}/v1`, {
+    const response = await fetch(`${aiStore.apiDomain}/v1/chat/completions`, {
       method: `POST`,
       headers: {
         'Content-Type': `application/json`,
@@ -214,7 +214,7 @@ export function generateCssRewritePrompt(options: {
 export async function callAI(prompt: string): Promise<string> {
   const aiStore = useAIStore()
   try {
-    const response = await fetch(`${aiStore.apiDomain}/v1`, {
+    const response = await fetch(`${aiStore.apiDomain}/v1/chat/completions`, {
       method: `POST`,
       headers: {
         'Content-Type': `application/json`,
