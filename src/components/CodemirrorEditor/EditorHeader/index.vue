@@ -61,7 +61,6 @@ const { copy: copyContent } = useClipboard({ source })
 
 const showExportImageDialog = ref(false)
 const showAIStyleDialog = ref(false)
-const showAboutDialog = ref(false)
 
 // 复制到微信公众号
 function copy() {
@@ -144,12 +143,6 @@ function copy() {
         </MenubarMenu>
         <EditDropdown />
         <StyleDropdown />
-        <MenubarMenu>
-        <MenubarTrigger @click="showAboutDialog = true">
-            <Users class="mr-1 size-4" />
-            关于
-          </MenubarTrigger>
-        </MenubarMenu>
       </Menubar>
     </div>
 
@@ -220,11 +213,6 @@ function copy() {
 
     <AIStyleDialog
       v-model:show="showAIStyleDialog"
-    />
-
-    <AboutDialog
-      :visible="showAboutDialog"
-      @close="showAboutDialog = false"
     />
   </header>
 </template>
