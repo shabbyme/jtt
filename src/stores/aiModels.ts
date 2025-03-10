@@ -1,7 +1,7 @@
+import type { Model } from '../services/aiModels'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { aiModelsService } from '../services/aiModels'
-import type { Model } from '../services/aiModels'
 
 export const useAIModelsStore = defineStore(`aiModels`, () => {
   const models = ref<Model[]>([])

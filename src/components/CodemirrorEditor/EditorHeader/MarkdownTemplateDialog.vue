@@ -7,9 +7,10 @@ import { toast } from '@/composables/useToast'
 import { useStore } from '@/stores'
 import { type Template, templates } from '@/templates'
 import { useVirtualList } from '@vueuse/core'
-import { BarChart, Code, Copy, FileText, Heading, Image, Layout, LayoutTemplate, Loader2, MessageSquare, Monitor, Plus, Search, Smartphone, Sparkles, Text, Type } from 'lucide-vue-next'
+import { BarChart, Code, Copy, Edit, FileText, Heading, Image, Layout, LayoutTemplate, Loader2, MessageSquare, Monitor, Plus, Search, Smartphone, Sparkles, Text, Type } from 'lucide-vue-next'
 import { marked } from 'marked'
 import { computed, ref, watch } from 'vue'
+import TemplateEditor from './TemplateEditor.vue'
 
 interface TemplateCategory {
   title: string
@@ -48,6 +49,9 @@ const recentTemplates = ref<Template[]>([]) // 最近使用的模板
 
 const isLoading = ref(false)
 const itemHeight = 100 // 每个模板项的高度
+
+const showEditor = ref(false)
+const editingTemplate = ref<Template | null>(null)
 
 // 分词函数
 function tokenize(text: string): string[] {
@@ -399,6 +403,30 @@ function toggleResponsivePreview() {
     previewWidth.value = `100%`
   }
 }
+
+// 处理模板编辑
+function handleTemplateEdit(template: Template) {
+  editingTemplate.value = template
+  showEditor.value = true
+}
+
+// 处理编辑完成
+function handleEditComplete(template: Template) {
+  // 更新模板内容
+  const category = Object.entries(templatesData).find(([_, cat]) =>
+    cat.items.some(item => item.name === template.name),
+  )
+
+  if (category) {
+    const index = category[1].items.findIndex(item => item.name === template.name)
+    if (index !== -1) {
+      category[1].items[index] = template
+    }
+  }
+
+  // 更新选中的模板
+  selectedTemplate.value = template
+}
 </script>
 
 <template>
@@ -506,6 +534,16 @@ function toggleResponsivePreview() {
               </h3>
               <div class="flex items-center gap-2">
                 <Button
+                  v-if="selectedTemplate"
+                  variant="outline"
+                  size="sm"
+                  class="h-8 md:h-10"
+                  @click="handleTemplateEdit(selectedTemplate)"
+                >
+                  <Edit class="mr-1.5 h-3.5 w-3.5 md:mr-2 md:h-4 md:w-4" />
+                  编辑模板
+                </Button>
+                <Button
                   v-if="selectedTemplate?.content.includes('<style>')"
                   variant="outline"
                   size="sm"
@@ -534,7 +572,7 @@ function toggleResponsivePreview() {
             >
               <div
                 v-if="selectedTemplate && !isLoading"
-                class="preview-content prose dark:prose-invert prose-sm md:prose-base max-w-none overflow-x-auto"
+                class="preview-content prose prose-sm md:prose-base dark:prose-invert max-w-none overflow-x-auto"
                 :style="{ width: previewWidth, transition: 'width 0.3s ease' }"
                 v-html="previewHtml"
               />
@@ -586,6 +624,13 @@ function toggleResponsivePreview() {
       </div>
     </DialogContent>
   </Dialog>
+
+  <!-- 模板编辑器 -->
+  <TemplateEditor
+    v-model:show="showEditor"
+    v-model:template="editingTemplate"
+    @confirm="handleEditComplete"
+  />
 </template>
 
 <style scoped>

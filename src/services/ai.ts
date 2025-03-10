@@ -1,5 +1,58 @@
 import { useAIStore } from '@/stores'
 
+// 添加检查和纠正模型的函数
+function validateAndFixModel(model: string): string {
+  console.log(`用户选择的模型: ${model}`)
+  return model
+}
+
+// 处理流式响应的函数
+async function processStreamResponse(
+  response: Response,
+  onToken?: (token: string) => void,
+  onFinish?: () => void,
+) {
+  const aiStore = useAIStore()
+  const reader = response.body?.getReader()
+  const decoder = new TextDecoder()
+
+  if (!reader) {
+    throw new Error(`无法读取响应数据流`)
+  }
+
+  while (true) {
+    const { done, value } = await reader.read()
+
+    if (done) {
+      aiStore.setGenerating(false)
+      onFinish?.()
+      break
+    }
+
+    const chunk = decoder.decode(value)
+    const lines = chunk.split(`\n`)
+
+    for (const line of lines) {
+      if (line.startsWith(`data: `)) {
+        const data = line.slice(6)
+        if (data === `[DONE]`)
+          continue
+
+        try {
+          const parsed = JSON.parse(data)
+          const token = parsed.choices[0]?.delta?.content
+          if (token) {
+            onToken?.(token)
+          }
+        }
+        catch (e) {
+          console.error(`解析响应数据失败:`, e)
+        }
+      }
+    }
+  }
+}
+
 export interface AIStreamOptions {
   prompt: string | Array<{ role: string, content: string }> | {
     system?: string
@@ -20,14 +73,37 @@ export async function streamAIContent({
   aiStore.setGenerating(true)
 
   try {
+    // 验证必要的配置
+    if (!aiStore.apiKey) {
+      throw new Error(`请先设置 API Key`)
+    }
+
+    if (!aiStore.apiDomain || aiStore.apiDomain === `YOUR_API_BASE_URL`) {
+      throw new Error(`请先设置 API 地址`)
+    }
+
+    // 添加日志记录，显示实际使用的模型
+    console.log(`AI Store中的模型状态:`, {
+      selectedModel: aiStore.selectedModel,
+      customModel: aiStore.customModel,
+    })
+
+    const selectedModel = aiStore.customModel || aiStore.selectedModel
+    console.log(`发送请求前使用的模型：${selectedModel}`)
+
+    // 验证并修复可能的模型问题
+    const validatedModel = validateAndFixModel(selectedModel)
+    console.log(`验证后使用的模型：${validatedModel}`)
+
     const response = await fetch(`${aiStore.apiDomain}/v1/chat/completions`, {
       method: `POST`,
       headers: {
         'Content-Type': `application/json`,
         'Authorization': `Bearer ${aiStore.apiKey}`,
+        'Accept': `application/json`,
       },
       body: JSON.stringify({
-        model: aiStore.customModel || aiStore.selectedModel,
+        model: validatedModel,
         messages: [
           ...aiStore.presetWords.map(word => ({ role: `system` as const, content: word })),
           ...(typeof prompt === `string`
@@ -47,71 +123,32 @@ export async function streamAIContent({
     })
 
     if (!response.ok) {
-      aiStore.setGenerating(false)
-      let errorMessage = ``
+      const errorText = await response.text().catch(() => `无法获取错误详情`)
+      console.error(`API错误：`, {
+        状态码: response.status,
+        状态文本: response.statusText,
+        错误详情: errorText,
+      })
 
-      switch (response.status) {
-        case 401:
-          errorMessage = `认证失败：API Key 无效。请先前往"AI助手 -> 天马座API"注册并获取 API Key，然后在"AI助手 -> OpenAI设置"中填写。注意 Key 应以 sk- 开头`
-          break
-        case 403:
-          errorMessage = `API Key 无访问权限。请前往"AI助手 -> 天马座API"检查 Key 是否有效或额度是否用尽`
-          break
-        case 429:
-          errorMessage = `请求过于频繁，请稍后再试。如需更高请求限制，请前往"AI助手 -> 天马座API"升级账户`
-          break
-        case 500:
-          errorMessage = `AI 服务器错误，请稍后重试。如持续出现此问题，请前往"AI助手 -> 天马座API"查看服务状态`
-          break
-        default:
-          errorMessage = `请求失败 (${response.status}): ${response.statusText}。如需帮助，请访问"AI助手 -> 天马座API"获取支持`
+      // 特殊处理模型不存在错误
+      if (errorText.includes(`model`) && (errorText.includes(`not found`) || errorText.includes(`cannot find`))) {
+        console.warn(`模型不可用错误：${errorText}`)
+        throw new Error(`所选模型(${validatedModel})不可用，请选择其他模型或联系API提供商确认支持的模型列表`)
       }
 
-      throw new Error(errorMessage)
+      throw new Error(`API请求失败 (${response.status}): ${errorText || response.statusText}`)
     }
 
-    const reader = response.body?.getReader()
-    const decoder = new TextDecoder()
-
-    if (!reader) {
-      throw new Error(`No reader available`)
-    }
-
-    while (true) {
-      const { done, value } = await reader.read()
-
-      if (done) {
-        aiStore.setGenerating(false)
-        onFinish?.()
-        break
-      }
-
-      const chunk = decoder.decode(value)
-      const lines = chunk.split(`\n`)
-
-      for (const line of lines) {
-        if (line.startsWith(`data: `)) {
-          const data = line.slice(6)
-          if (data === `[DONE]`)
-            continue
-
-          try {
-            const parsed = JSON.parse(data)
-            const token = parsed.choices[0]?.delta?.content
-            if (token) {
-              onToken?.(token)
-            }
-          }
-          catch (e) {
-            console.error(`Error parsing SSE message:`, e)
-          }
-        }
-      }
-    }
+    return processStreamResponse(response, onToken, onFinish)
   }
   catch (error) {
     aiStore.setGenerating(false)
-    onError?.(error as Error)
+    console.error(`AI 请求失败:`, {
+      错误信息: error instanceof Error ? error.message : String(error),
+      API地址: aiStore.apiDomain,
+      模型: aiStore.customModel || aiStore.selectedModel,
+    })
+    onError?.(error instanceof Error ? error : new Error(String(error)))
   }
 }
 
@@ -214,6 +251,19 @@ export function generateCssRewritePrompt(options: {
 export async function callAI(prompt: string): Promise<string> {
   const aiStore = useAIStore()
   try {
+    // 添加日志记录，显示callAI中使用的模型
+    console.log(`callAI函数 - AI Store中的模型状态:`, {
+      selectedModel: aiStore.selectedModel,
+      customModel: aiStore.customModel,
+    })
+
+    const selectedModel = aiStore.customModel || aiStore.selectedModel
+    console.log(`callAI函数 - 使用模型：${selectedModel}`)
+
+    // 验证并修复可能的模型问题
+    const validatedModel = validateAndFixModel(selectedModel)
+    console.log(`callAI函数 - 验证后的模型：${validatedModel}`)
+
     const response = await fetch(`${aiStore.apiDomain}/v1/chat/completions`, {
       method: `POST`,
       headers: {
@@ -221,7 +271,7 @@ export async function callAI(prompt: string): Promise<string> {
         'Authorization': `Bearer ${aiStore.apiKey}`,
       },
       body: JSON.stringify({
-        model: aiStore.customModel || aiStore.selectedModel,
+        model: validatedModel,
         messages: [{ role: `user`, content: prompt }],
         temperature: aiStore.temperature,
         max_tokens: aiStore.maxLength,
@@ -229,11 +279,24 @@ export async function callAI(prompt: string): Promise<string> {
     })
 
     if (!response.ok) {
-      throw new Error(`AI 服务请求失败: ${response.statusText}`)
+      const errorText = await response.text().catch(() => `无法获取错误详情`)
+      console.error(`callAI API错误：`, {
+        状态码: response.status,
+        状态文本: response.statusText,
+        错误详情: errorText,
+      })
+
+      // 特殊处理模型不存在错误
+      if (errorText.includes(`model`) && (errorText.includes(`not found`) || errorText.includes(`cannot find`))) {
+        console.warn(`模型不可用错误：${errorText}`)
+        throw new Error(`所选模型(${validatedModel})不可用，请选择其他模型或联系API提供商确认支持的模型列表`)
+      }
+
+      throw new Error(`API请求失败 (${response.status}): ${errorText || response.statusText}`)
     }
 
     const data = await response.json()
-    return data.choices[0]?.message?.content || ``
+    return data.choices[0].message.content
   }
   catch (error) {
     console.error(`调用 AI 服务失败:`, error)

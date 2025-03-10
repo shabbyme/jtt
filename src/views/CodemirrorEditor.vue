@@ -1988,16 +1988,17 @@ function handlePreviewBlur() {
 .preview-wrapper {
   height: 100%;
   overflow-y: auto;
-  background-color: var(--background);
+  background-color: transparent;
   width: 100%;
   padding: 0;
   box-sizing: border-box;
+  border: none;
 
   .preview {
     width: 100%;
     height: 100%;
     margin: 0;
-    background-color: var(--background);
+    background-color: transparent;
     box-shadow: none;
     border: none;
 
@@ -2008,6 +2009,8 @@ function handlePreviewBlur() {
       padding: 20px;
       box-sizing: border-box;
       border: none;
+      background-color: transparent;
+      color: var(--foreground);
     }
   }
 }
@@ -2334,6 +2337,23 @@ function handlePreviewBlur() {
     right: 8px;
     padding-left: 8px;
     padding-right: 8px;
+  }
+}
+
+.dark {
+  .preview-wrapper {
+    background-color: transparent;
+
+    .preview {
+      background-color: transparent;
+      box-shadow: none;
+      border: none;
+
+      #output {
+        background-color: transparent;
+        color: hsl(var(--foreground));
+      }
+    }
   }
 }
 </style>

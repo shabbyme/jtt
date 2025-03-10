@@ -29,17 +29,20 @@ export class AIModelsService {
         return this.getDefaultModels()
       }
 
-      console.log(`正在请求API:`, `${this.baseUrl}/v1/models`)
-      console.log(`请求头:`, {
-        'Authorization': `Bearer ${this.apiKey.slice(0, 4)}...${this.apiKey.slice(-4)}`,
-        'Content-Type': `application/json`,
-      })
+      if (!this.baseUrl || this.baseUrl === `YOUR_API_BASE_URL`) {
+        console.warn(`API地址未设置，将返回默认模型列表`)
+        return this.getDefaultModels()
+      }
 
       const response = await axios.get(`${this.baseUrl}/v1/models`, {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': `application/json`,
+          'Accept': `application/json`,
         },
+        // 移除可能导致CORS问题的配置
+        withCredentials: false,
+        timeout: 30000, // 增加超时时间到30秒
       })
 
       // 检查响应状态
@@ -88,7 +91,8 @@ export class AIModelsService {
         const processedModels = modelList.map((model: any) => {
           // 尝试从不同的属性中获取数据
           const id = model.id || model.model_id || model.name || ``
-          const name = model.name || this.formatModelName(id)
+          // 保持原始格式，不做格式化
+          const name = id
           // 根据模型ID设置默认的maxTokens
           let maxTokens = model.max_tokens || model.maxTokens || 0
           if (maxTokens === 0) {
@@ -128,46 +132,49 @@ export class AIModelsService {
         const responseData = error.response?.data
         let errorMessage = `获取模型列表失败`
 
+        console.error(`API请求详细信息:`, {
+          请求URL: `${this.baseUrl}/v1/models`,
+          状态码: status,
+          响应数据: responseData,
+          错误类型: error.name,
+          错误信息: error.message,
+        })
+
         if (status === 401) {
-          errorMessage = `API认证失败，请检查API Key是否正确设置`
+          errorMessage = `API Key 无效或格式错误`
         }
         else if (status === 403) {
-          errorMessage = `没有权限访问模型列表，请检查API Key权限`
+          // 检查是否是 CORS 错误
+          const isCorsError = !error.response || error.message.includes(`CORS`) || error.message.includes(`Network Error`)
+
+          if (isCorsError) {
+            console.warn(`检测到CORS错误，将返回默认模型列表`)
+            return this.getDefaultModels()
+          }
+          else {
+            errorMessage = `API访问被拒绝，请检查：\n1. API Key 是否正确\n2. 是否有访问权限\n3. API地址是否正确：${this.baseUrl}`
+          }
         }
         else if (status === 404) {
-          errorMessage = `API地址不正确或服务不可用`
+          errorMessage = `API接口不存在，请检查API地址是否正确：${this.baseUrl}`
         }
         else if (status === 429) {
           errorMessage = `请求过于频繁，请稍后再试`
         }
+        else if (!status) {
+          console.warn(`网络错误，将返回默认模型列表`)
+          return this.getDefaultModels()
+        }
 
-        console.error(`API请求失败:`, {
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: responseData,
-          url: this.baseUrl,
-          message: errorMessage,
-          headers: error.response?.headers,
-          errorCode: responseData?.error?.code,
-          errorType: responseData?.error?.type,
-        })
-
-        throw new Error(errorMessage)
+        // 对于其他错误，返回默认模型列表
+        console.warn(`${errorMessage}，将返回默认模型列表`)
+        return this.getDefaultModels()
       }
       else {
-        console.error(`获取模型列表失败:`, error)
-        throw error
+        console.error(`未知错误:`, error)
+        return this.getDefaultModels()
       }
     }
-  }
-
-  private formatModelName(id: string): string {
-    // 美化模型名称显示
-    return id
-      .replace(`gpt-`, `GPT-`)
-      .split(`-`)
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(` `)
   }
 
   private getDefaultModels(): Model[] {

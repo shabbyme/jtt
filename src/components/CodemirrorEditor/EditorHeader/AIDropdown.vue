@@ -2,14 +2,17 @@
 import { useAIStore } from '@/stores'
 import { BrainCircuit } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
+import { ref, watch } from 'vue'
 import { Button } from '../../../components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/dialog'
 import { Input } from '../../../components/ui/input'
 import { Label } from '../../../components/ui/label'
 import { MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from '../../../components/ui/menubar'
+import { useToast } from '../../../components/ui/use-toast'
 import AIModelSelector from './AIModelSelector.vue'
 
 const aiStore = useAIStore()
+const { toast } = useToast()
 
 const {
   apiKey,
@@ -21,6 +24,101 @@ const {
   isGenerating,
   settingsDialogVisible,
 } = storeToRefs(aiStore)
+
+// 添加保存设置的方法
+function saveSettings() {
+  // 打印当前设置
+  console.log(`保存设置前的状态:`, {
+    selectedModel: selectedModel.value,
+    apiKey: apiKey.value,
+    apiDomain: apiDomain.value,
+  })
+
+  // 确保调用selectModel方法更新当前选择的模型
+  // 这一步非常重要，必须先调用selectModel确保模型选择被正确更新
+  aiStore.selectModel(selectedModel.value)
+
+  // 使用aiStore的方法保存所有设置
+  aiStore.saveAllSettings()
+
+  // 强制更新localStorage中的模型选择
+  localStorage.setItem(`md-ai-selected-model`, selectedModel.value)
+
+  // 打印保存后的状态
+  console.log(`保存设置后的状态:`, {
+    selectedModel: selectedModel.value,
+    storeModel: aiStore.selectedModel,
+    localStorage: localStorage.getItem(`md-ai-selected-model`),
+    aiSettings: localStorage.getItem(`aiSettings`),
+  })
+
+  // 关闭对话框
+  settingsDialogVisible.value = false
+
+  // 显示保存成功提示
+  toast({
+    title: `设置已保存`,
+    description: `AI设置已成功保存，已选择模型: ${selectedModel.value}`,
+  })
+}
+
+// 自定义模型名称
+const customModelName = ref(``)
+async function addCustomModel() {
+  if (!customModelName.value) {
+    toast({
+      title: `无法添加模型`,
+      description: `请输入模型名称`,
+      variant: `destructive`,
+    })
+    return
+  }
+
+  try {
+    await aiStore.addCustomModel(customModelName.value)
+    toast({
+      title: `模型已添加`,
+      description: `${customModelName.value} 已添加到自定义模型列表`,
+    })
+    customModelName.value = ``
+  }
+  catch (error) {
+    toast({
+      title: `添加模型失败`,
+      description: error instanceof Error ? error.message : `请检查模型名称是否正确`,
+      variant: `destructive`,
+    })
+  }
+}
+
+// 当对话框打开时，检查模型列表是否需要刷新
+watch(settingsDialogVisible, async (newVal) => {
+  if (newVal === true) {
+    console.log(`设置对话框打开，检查模型列表和当前设置`)
+
+    // 恢复已保存的模型选择
+    const savedModel = localStorage.getItem(`md-ai-selected-model`)
+    if (savedModel) {
+      console.log(`恢复保存的模型选择:`, savedModel, `当前模型:`, selectedModel.value)
+      // 只有当保存的模型与当前不同时才更新
+      if (savedModel !== selectedModel.value) {
+        selectedModel.value = savedModel
+        aiStore.selectModel(savedModel)
+      }
+    }
+
+    // 如果模型列表为空且有API配置，自动获取模型列表
+    if (aiStore.models.length === 0 && apiKey.value && apiDomain.value) {
+      try {
+        await aiStore.fetchModels()
+        console.log(`成功获取模型列表`)
+      }
+      catch (err) {
+        console.error(`获取模型列表失败:`, err)
+      }
+    }
+  }
+})
 </script>
 
 <template>
@@ -84,27 +182,30 @@ const {
           <Label>模型</Label>
           <div class="flex flex-wrap items-center gap-2">
             <AIModelSelector v-model:model-id="selectedModel" />
+            <div class="mt-2 w-full flex items-center gap-2">
+              <Input
+                v-model="customModelName"
+                placeholder="输入自定义模型名称"
+                class="flex-1"
+              />
+              <Button
+                variant="outline"
+                class="whitespace-nowrap"
+                @click="addCustomModel"
+              >
+                添加模型
+              </Button>
+            </div>
           </div>
         </div>
 
         <!-- 系统提示词 -->
         <div class="grid gap-2">
           <Label>系统提示词</Label>
-          <div class="flex flex-wrap gap-2">
-            <Input
-              v-for="(_word, index) in presetWords"
-              :key="index"
-              v-model="presetWords[index]"
-              class="flex-1"
-            />
-            <Button
-              variant="outline"
-              class="whitespace-nowrap"
-              @click="presetWords.push('')"
-            >
-              添加提示词
-            </Button>
-          </div>
+          <Input
+            v-model="presetWords[0]"
+            placeholder="输入系统提示词"
+          />
         </div>
 
         <!-- 温度 -->
@@ -134,9 +235,12 @@ const {
         </div>
       </div>
 
-      <DialogFooter>
-        <Button @click="settingsDialogVisible = false">
-          关闭
+      <DialogFooter class="flex justify-between">
+        <Button variant="outline" @click="settingsDialogVisible = false">
+          取消
+        </Button>
+        <Button @click="saveSettings">
+          保存
         </Button>
       </DialogFooter>
     </DialogContent>

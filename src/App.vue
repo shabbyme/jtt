@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import CodemirrorEditor from '@/views/CodemirrorEditor.vue'
+import Toast from './components/ui/toast/Toast.vue'
 </script>
 
 <template>
+  <Toast />
   <CodemirrorEditor />
 </template>
 
