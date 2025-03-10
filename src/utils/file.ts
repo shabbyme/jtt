@@ -405,8 +405,6 @@ function fileUpload(content: string, file: File) {
   switch (imgHost) {
     case `aliOSS`:
       return aliOSSFileUpload(file)
-    case `minio`:
-      return minioFileUpload(content, file.name)
     case `txCOS`:
       return txCOSFileUpload(file)
     case `qiniu`:
